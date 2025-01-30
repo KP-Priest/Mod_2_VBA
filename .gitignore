@@ -10,6 +10,10 @@
 *.userosscache
 *.sln.docstates
 
+# Excel and VBA files
+*.xlsm
+
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
