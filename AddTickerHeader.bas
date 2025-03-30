@@ -166,4 +166,113 @@ NextWorksheet:
     wb.Close True
     
     MsgBox "Stock data processed successfully.", vbInformation
+End Sub
+
+Sub CalculateExtremes()
+    ' This macro calculates and identifies tickers with greatest % increase, decrease, and volume
+    
+    Dim wb As Workbook
+    Dim ws As Worksheet
+    Dim tickerCol As Long, percentCol As Long, volumeCol As Long
+    Dim lastRow As Long, i As Long
+    Dim maxPercentIncrease As Double, maxPercentDecrease As Double, maxVolume As Double
+    Dim maxIncTicker As String, maxDecTicker As String, maxVolTicker As String
+    
+    ' Open the workbook
+    Set wb = Workbooks.Open("/Users/kp/Git/Mod_2_VBA/Multiple_year_stock_data.xlsx")
+    
+    ' Loop through each worksheet
+    For Each ws In wb.Worksheets
+        ' Find the Ticker header column
+        tickerCol = 0
+        For i = 1 To 100  ' Reasonably large number to search across columns
+            If ws.Cells(1, i).Value = "Ticker" Then
+                tickerCol = i
+                Exit For
+            End If
+        Next i
+        
+        ' If ticker column not found, show error and skip this worksheet
+        If tickerCol = 0 Then
+            MsgBox "Ticker header not found in worksheet: " & ws.Name & ". Run AddTickerHeader and ProcessStockData first.", vbExclamation
+            GoTo NextWorksheet
+        End If
+        
+        ' The other columns relative to Ticker column
+        percentCol = tickerCol + 2  ' "Percent Change" column
+        volumeCol = tickerCol + 3   ' "Total Stock Volume" column
+        
+        ' Find the last row with data in the Ticker column
+        lastRow = ws.Cells(ws.Rows.Count, tickerCol).End(xlUp).Row
+        
+        ' Initialize variables to track extreme values
+        maxPercentIncrease = -9999999  ' Very low starting value
+        maxPercentDecrease = 9999999   ' Very high starting value
+        maxVolume = 0
+        maxIncTicker = ""
+        maxDecTicker = ""
+        maxVolTicker = ""
+        
+        ' Loop through all rows with data
+        For i = 2 To lastRow
+            ' Check for greatest % increase
+            If ws.Cells(i, percentCol).Value > maxPercentIncrease Then
+                maxPercentIncrease = ws.Cells(i, percentCol).Value
+                maxIncTicker = ws.Cells(i, tickerCol).Value
+            End If
+            
+            ' Check for greatest % decrease
+            If ws.Cells(i, percentCol).Value < maxPercentDecrease Then
+                maxPercentDecrease = ws.Cells(i, percentCol).Value
+                maxDecTicker = ws.Cells(i, tickerCol).Value
+            End If
+            
+            ' Check for greatest total volume
+            If ws.Cells(i, volumeCol).Value > maxVolume Then
+                maxVolume = ws.Cells(i, volumeCol).Value
+                maxVolTicker = ws.Cells(i, volumeCol - 3).Value
+            End If
+        Next i
+        
+        ' Set up the results table headers
+        ws.Cells(1, 15).Value = "Category"
+        ws.Cells(1, 16).Value = "Ticker"
+        ws.Cells(1, 17).Value = "Value"
+        
+        ' Format the headers
+        ws.Range(ws.Cells(1, 15), ws.Cells(1, 17)).Font.Bold = True
+        
+        ' Set up category names
+        ws.Cells(2, 15).Value = "Greatest % Increase"
+        ws.Cells(3, 15).Value = "Greatest % Decrease"
+        ws.Cells(4, 15).Value = "Greatest Total Volume"
+        
+        ' Output results
+        ws.Cells(2, 16).Value = maxIncTicker
+        ws.Cells(3, 16).Value = maxDecTicker
+        ws.Cells(4, 16).Value = maxVolTicker
+        
+        ' Output values with appropriate formatting
+        ws.Cells(2, 17).Value = maxPercentIncrease
+        ws.Cells(2, 17).NumberFormat = "0.00%"
+        
+        ws.Cells(3, 17).Value = maxPercentDecrease
+        ws.Cells(3, 17).NumberFormat = "0.00%"
+        
+        ws.Cells(4, 17).Value = maxVolume
+        ws.Cells(4, 17).NumberFormat = "#,##0"
+        
+        ' Auto-fit columns for better readability
+        ws.Columns(15).AutoFit
+        ws.Columns(16).AutoFit
+        ws.Columns(17).AutoFit
+        
+NextWorksheet:
+    Next ws
+    
+    ' Save and close the workbook
+    wb.Save
+    wb.Close True
+    
+    MsgBox "Extreme values calculated successfully.", vbInformation
 End Sub 
